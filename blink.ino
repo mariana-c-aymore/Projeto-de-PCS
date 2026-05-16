@@ -1,14 +1,10 @@
-// Código em C++ <3
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  Serial.println("Hello, ESP32!");
+}
 
-//Sensor de Temperatura
-
-//Sensor de frequência cardíaca
-
-//Sensor de oxigenação sanguínea 
-
-#include <stdio.h>
-#include <stdlib.h>
-
-int main(void) {
-  printf("hello mari and gabi\n"); 
+void loop() {
+  // put your main code here, to run repeatedly:
+  delay(10); // this speeds up the simulation
 }
