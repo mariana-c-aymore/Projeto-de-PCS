@@ -16,13 +16,24 @@ Para reproduzir este projeto, você precisará dos seguintes componentes:
 
 ---
 
-##  Bibliotecas Necessárias
+###  Bibliotecas Necessárias
 
-Antes de fazer o upload do código, você precisa instalar as seguintes bibliotecas diretamente pelo Gerenciador de Bibliotecas da Arduino IDE (`Ferramentas` > `Gerenciar Bibliotecas...`):
+Para compilar este projeto, você precisará instalar as seguintes bibliotecas diretamente pelo **Gerenciador de Bibliotecas** da Arduino IDE (`Ferramentas` > `Gerenciar Bibliotecas...` ou `Ctrl + Shift + I`):
 
-1. **PubSubClient** (por Nick O'Leary) - Para a comunicação MQTT.
-2. **MAX30100_PulseOximeter** (ou a biblioteca específica do MAX30100 que você configurou no escopo).
-3. **Adafruit MLX90614 Library** - Para a leitura do sensor de temperatura.
-4. **Wire** (Já inclusa no core do Arduino) - Para comunicação I2C com os sensores.
+1. **PubSubClient** (por *Nick O'Leary*)
+   * **Para que serve:** Gerencia a conexão e o envio de mensagens via protocolo MQTT.
+   * **Como buscar:** Digite `PubSubClient` na barra de pesquisa.
 
+2. **MAX30100lib** (por *Oxullo Intersecans*)
+   * **Para que serve:** Controla o sensor MAX30100 para leitura de batimentos cardíacos e oxigenação (SpO2).
+   * **Como buscar:** Digite `MAX30100 PulseOximeter` e instale a versão do autor Oxullo.
+
+3. **Adafruit MLX90614 Library** (por *Adafruit*)
+   * **Para que serve:** Realiza a leitura do sensor de temperatura infravermelho MLX90614.
+   * **Como buscar:** Digite `MLX90614` na barra de pesquisa.
+
+####  Bibliotecas Nativas (Já inclusas na IDE)
+As bibliotecas abaixo não precisam ser instaladas manualmente, pois já vêm integradas ao selecionar a sua placa:
+* **`Wire.h`** (Para comunicação I2C dos sensores).
+* **`WiFi.h`** (Se você estiver utilizando ESP32) ou **`ESP8266WiFi.h`** (Se estiver utilizando NodeMCU/ESP8266).
 
