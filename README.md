@@ -20,15 +20,15 @@ Para reproduzir este projeto, você precisará dos seguintes componentes:
 
 Para compilar este projeto, você precisará instalar as seguintes bibliotecas diretamente pelo **Gerenciador de Bibliotecas** da Arduino IDE (`Ferramentas` > `Gerenciar Bibliotecas...` ou `Ctrl + Shift + I`):
 
-1. **PubSubClient** (por *Nick O'Leary*)
+1. **PubSubClient.h** (por *Nick O'Leary*)
    * **Para que serve:** Gerencia a conexão e o envio de mensagens via protocolo MQTT.
    * **Como buscar:** Digite `PubSubClient` na barra de pesquisa.
 
-2. **MAX30100lib** (por *Oxullo Intersecans*)
+2. **MAX30100.h** (por *Oxullo Intersecans*)
    * **Para que serve:** Controla o sensor MAX30100 para leitura de batimentos cardíacos e oxigenação (SpO2).
    * **Como buscar:** Digite `MAX30100 PulseOximeter` e instale a versão do autor Oxullo.
 
-3. **Adafruit MLX90614 Library** (por *Adafruit*)
+3. **VEGA_MLX90614.h** (por *Adafruit*)
    * **Para que serve:** Realiza a leitura do sensor de temperatura infravermelho MLX90614.
    * **Como buscar:** Digite `MLX90614` na barra de pesquisa.
 
