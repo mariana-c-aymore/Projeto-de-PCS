@@ -1,65 +1,118 @@
-const char* MQTT = "broker.hivemq.com"; //const é o define da linguagem c
+#include <Wire.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include <MAX30100.h>
+#include <VEGA_MLX90614.h>
+#include <ArduinoJson.h>
+
+// Configurações do Wi-Fi
+const char* SSID = "NOME_DA_SUA_REDE_WIFI";
+const char* SENHA = "SENHA_DO_SEU_WIFI";
+
+// Configurações do MQTT
+const char* MQTT_BROKER = "broker.hivemq.com"; 
 const int PORTA_MQTT = 1883;
-const char* mqtt_topic = "enfermaria/leitoX/sinais_vitais"
+const char* MQTT_TOPIC = "enfermaria/leito_X/sinais_vitais"; 
 
+// Instâncias
+MAX30100 oximetro;
+VEGA_MLX90614 termometro;
+WiFiClient CLIENTE;           
+PubSubClient CONEXAO(CLIENTE); 
 
-WiFiClient CLIENTE_IP;           // conecta-se ao IP. WifiClient é um tipo de variável, assim como int é
-PubSubClient CLIENTE(CLIENTE); // Passa o CLIENTE de rede para a biblioteca MQTT
+// Variáveis de Controle de Tempo
+unsigned long tempoAnterior = 0;
+const long intervaloEnvio = 2000; 
 
+// Função para Conectar ao Wi-Fi
+void CONECTE_AO_WIFI() {
+  delay(10);
+  Serial.println();
+  Serial.print("Conectando-se à rede: ");
+  Serial.println(SSID);
 
-void CONECTE_AO_MQTT() {
- while (!CLIENTE.connected()) { //enquanto o cliente NÃO estiver conectado...
-   Serial.print("Tentando conectar ao Broker MQTT...");
+  WiFi.begin(SSID, SENHA);
 
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
 
-   String CLIENTE_ID = "LEITO-01" + String(random(0, 0xffff), HEX); //Cria ID único e aleatório para o LEITO 01, converte para a base hexadecimal (HEX) e depois para texto (STRING)
-  
-   if (CLIENTE.connect(CLIENTE_ID.c_str())) {
-     Serial.println(" Sucesso! Conectado ao Broker.");
-   } else {
-     // Se falhar, mostra o código do erro e espera 5 segundos antes de tentar de novo
-     Serial.print(" Falhou. Código de erro: ");
-     Serial.print(CLIENTE.state());
-     Serial.println(" Tentando novamente em 5 segundos...");
-     delay(5000);
-   }
- }
+  Serial.println("\nWi-Fi conectado!");
+  Serial.print("Endereço IP: ");
+  Serial.println(WiFi.localIP());
 }
 
+// Função para Conectar ao MQTT
+void CONECTE_AO_MQTT() {
+  while (!CONEXAO.connected()) { 
+    if (WiFi.status() != WL_CONNECTED) {
+      CONECTE_AO_WIFI();
+    }
 
-void setup() 
-  Wire.begin();
-  Serial.begin(115200);
-   CLIENTE.setServer(MQTT, PORTA_MQTT);
-  
-  Serial.println("Inicializando o sensor...");
-  Serial.println("Inicializando o sensor de temperatura MLX90614...");
-  
-  // Inicializa o sensor físico
-  termometro.begin();
-  
-  // Inicializa o sensor já configurado para calcular batimentos e oxigênio
-  if (!oximetro.begin()) {
-    Serial.println("Erro: Sensor MAX30100 não foi encontrado!");
-    while(1); // Trava aqui se houver erro de hardware
+    Serial.print("Tentando conectar ao Broker MQTT...");
+    String CLIENTE_ID = "LEITO-01-" + String(random(0, 0xffff), HEX); 
+    
+    if (CONEXAO.connect(CLIENTE_ID.c_str())) {
+      Serial.println(" Sucesso! Conectado ao Broker.");
+    } else {
+      Serial.print(" Falhou. Código de erro: ");
+      Serial.print(CONEXAO.state()); 
+      Serial.println(" Tentando novamente em 5 segundos...");
+      delay(5000);
+    }
   }
 }
 
+void setup() {
+  Wire.begin(21, 22); //SDA=21, SCL=22)
+  Serial.begin(115200);
+  
+  CONECTE_AO_WIFI();
+  CONEXAO.setServer(MQTT_BROKER, PORTA_MQTT);
+  
+  Serial.println("Inicializando os sensores...");
+  termometro.begin();
+  
+  if (!oximetro.begin()) {
+    Serial.println("Erro: Sensor MAX30100 não foi encontrado!");
+    while(1); 
+  }
+  oximetro.setMode(MAX30100_MODE_SPO2_HR);
+  oximetro.setLedsCurrent(MAX30100_LED_CURR_24MA, MAX30100_LED_CURR_24MA);
+}
 
 void loop() {
-  // Atualiza as leituras internas do sensor (essencial rodar sempre)
+  if (!CONEXAO.connected()) {
+    CONECTE_AO_MQTT();
+  }
+  CONEXAO.loop(); 
   oximetro.update();
 
+  unsigned long tempoAtual = millis();
+  if (tempoAtual - tempoAnterior >= intervaloEnvio) {
+    tempoAnterior = tempoAtual;
 
-  // Puxa os valores já calculados pelas funções prontas!
-  float batimentos = oximetro.getHeartRate();
-  float oxigenacao = oximetro.getSpO2();
+    float batimentos = oximetro.getHeartRate();
+    float oxigenacao = oximetro.getSpO2();
+    float temperatura = termometro.readObjectTempC(); 
+    
+    StaticJsonDocument<128> doc; 
+    
+    doc["bpm"] = round(batimentos);
+    doc["spo2"] = oxigenacao;
+    doc["temp"] = String(temperatura, 1).toFloat();
 
+    String payload;
+    serializeJson(doc, payload); 
 
-  // Mostra os valores finais e limpos na tela
-  Serial.print("BPM: ");
-  Serial.print(batimentos);
-  Serial.print(" | SpO2: ");
-  Serial.print(oxigenacao);
-  Serial.println("%");
+    Serial.print("Payload JSON Gerado: "); 
+    Serial.println(payload);
+
+    if (CONEXAO.publish(MQTT_TOPIC, payload.c_str())) {
+      Serial.println("Dados publicados com sucesso!");
+    } else {
+      Serial.println("Erro ao publicar no MQTT.");
+    }
+  }
 }
