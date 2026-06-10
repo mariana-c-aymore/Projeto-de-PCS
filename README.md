@@ -1,39 +1,49 @@
-# Projeto-de-PCS
+# 📟 Firmware e Integração dos Sensores
 
-# Monitor de Sinais Vitais - MQTT (Leito Hospitalar)
-
-Este projeto consiste em um sistema de monitoramento de sinais vitais para leitos hospitalares utilizando a tecnologia IoT. Ele realiza a leitura de batimentos cardíacos, oxigenação do sangue (SpO2) e temperatura corporal, enviando esses dados em tempo real para um Broker MQTT.
+Esta branch contém o código-fonte responsável por inicializar, calibrar e ler os dados brutos dos sensores de sinais vitais (**MAX30100** e **MLX90614**), além de estruturar esses dados antes do envio.
 
 ---
 
-##  Hardware Necessário
+## 🗺️ Pinagem e Conexões (I2C Bus)
 
-Para reproduzir este projeto, você precisará dos seguintes componentes:
-* **Microcontrolador:** ESP32 ou ESP8266 (com suporte a Wi-Fi).
-* **Sensor de Oxigênio e Batimentos:** MAX30100.
-* **Sensor de Temperatura Infravermelho:** MLX90614.
-* Cabos de conexão (Jumpers) e Protoboard.
+Ambos os sensores utilizados neste projeto comunicam-se via protocolo **I2C**. Como o ESP32/ESP8266 possui pinos de barramento I2C padrão, eles foram conectados em paralelo nas mesmas linhas de dados (`SDA`) e clock (`SCL`).
+
+### Tabela de Conexões (Exemplo para ESP32)
+
+| Componente | Pino no Sensor | Pino no ESP32 | Descrição |
+| :--- | :--- | :--- | :--- |
+| **MAX30100** | VIN | 3.3V | Alimentação |
+| | GND | GND | Aterramento |
+| | SDA | GPIO 21 | Linha de Dados I2C |
+| | SCL | GPIO 22 | Linha de Clock I2C |
+| **MLX90614** | VIN | 3.3V / 5V | Alimentação |
+| | GND | GND | Aterramento |
+| | SDA | GPIO 21 | Linha de Dados I2C (Compartilhado) |
+| | SCL | GPIO 22 | Linha de Clock I2C (Compartilhado) |
+
+> ⚠️ **Nota Importante:** Verifique se o seu módulo MAX30100 necessita de resistores de *pull-up* nas linhas SDA/SCL para operar corretamente em 3.3V (alguns módulos comerciais possuem resistores de 4.7kΩ vinculados incorretamente a 5V).
 
 ---
 
-###  Bibliotecas Necessárias
+## 🛠️ Funcionamento do Código nesta Branch
 
-Para compilar este projeto, você precisará instalar as seguintes bibliotecas diretamente pelo **Gerenciador de Bibliotecas** da Arduino IDE (`Ferramentas` > `Gerenciar Bibliotecas...` ou `Ctrl + Shift + I`):
+O firmware presente nesta branch executa as seguintes etapas:
 
-1. **PubSubClient.h** (por *Nick O'Leary*)
-   * **Para que serve:** Gerencia a conexão e o envio de mensagens via protocolo MQTT.
-   * **Como buscar:** Digite `PubSubClient` na barra de pesquisa.
+1. **Inicialização (`setup`):** * Inicializa a comunicação Serial para depuração.
+   * Inicia o barramento I2C (`Wire.begin()`).
+   * Configura o MAX30100 com a corrente de LED apropriada e ativa o filtro de batimentos.
+   * Inicializa o MLX90614.
+2. **Loop de Leitura (`loop`):**
+   * Atualiza o objeto do oxímetro (`pox.update()`).
+   * Realiza leituras assíncronas de Temperatura Corporal (Objeto) e Temperatura Ambiente utilizando intervalos baseados em `millis()` para não bloquear o código.
+   * Exibe os resultados no Monitor Serial para validação local.
 
-2. **MAX30100.h** (por *Oxullo Intersecans*)
-   * **Para que serve:** Controla o sensor MAX30100 para leitura de batimentos cardíacos e oxigenação (SpO2).
-   * **Como buscar:** Digite `MAX30100 PulseOximeter` e instale a versão do autor Oxullo.
+---
 
-3. **VEGA_MLX90614.h** (por *Adafruit*)
-   * **Para que serve:** Realiza a leitura do sensor de temperatura infravermelho MLX90614.
-   * **Como buscar:** Digite `MLX90614` na barra de pesquisa.
+## 🚀 Como Testar Localmente
 
-####  Bibliotecas Nativas (Já inclusas na IDE)
-As bibliotecas abaixo não precisam ser instaladas manualmente, pois já vêm integradas ao selecionar a sua placa:
-* **`Wire.h`** (Para comunicação I2C dos sensores).
-* **`WiFi.h`** (Se você estiver utilizando ESP32) ou **`ESP8266WiFi.h`** (Se estiver utilizando NodeMCU/ESP8266).
+Para garantir que a leitura dos sensores está funcionando perfeitamente antes de subir os dados via MQTT:
 
+1. Faça o checkout para esta branch:
+   ```bash
+   git checkout nome-desta-branch
